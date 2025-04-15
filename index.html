@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Vertical Math Facts Table – Operations & Pages</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="controls">
+  <!-- The distribution graph appears in ASCII above the controls -->
+  <pre id="distributionGraph"></pre>
+  
+  <label for="constantValue">Constant operand:</label>
+  <input type="number" id="constantValue" value="4" min="1" max="12">
+  &nbsp;&nbsp;
+  
+  <label for="pageCount">Pages (each page = 11 rows):</label>
+  <input type="number" id="pageCount" value="1" min="1">
+  <br>
+  
+  <fieldset class="operatorSelection">
+    <legend>Select operations:</legend>
+    <label><input type="checkbox" name="operators" value="addition" checked> Addition (+)</label>
+    <label><input type="checkbox" name="operators" value="subtraction" checked> Subtraction (−)</label>
+    <label><input type="checkbox" name="operators" value="multiplication" checked> Multiplication (×)</label>
+    <label><input type="checkbox" name="operators" value="division" checked> Division (÷)</label>
+  </fieldset>
+  
+  <button id="submitButton">Submit</button>
+</div>
+
+<table>
+  <tbody id="mathTableBody">
+    <!-- The math problems table will be built here -->
+  </tbody>
+</table>
+
+<script src="script.js"></script>
+</body>
+</html>
