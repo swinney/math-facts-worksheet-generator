@@ -9,6 +9,7 @@ class MathFactTable {
     this.repetitionWindow = options.repetitionWindow || 5;
     this.hardProblemsOnly = options.hardProblemsOnly || false;
     this.noRepeatProblems = options.noRepeatProblems || false;
+    this.doubleDigitOperands = options.doubleDigitOperands || false;
     this.totalCells = this.rows * this.columns;
     this.finalProblems = [];
     
@@ -35,7 +36,9 @@ class MathFactTable {
 
   getFilteredNumbers() {
     let numbers = [];
-    for (let num = this.minRandom; num <= this.maxRandom; num++) {
+    const maxRange = this.doubleDigitOperands ? 99 : this.maxRandom;
+    
+    for (let num = this.minRandom; num <= maxRange; num++) {
       if (this.hardProblemsOnly && this.easyNumbers.has(num)) {
         continue;
       }
@@ -133,10 +136,12 @@ class MathFactTable {
     const { top, bottom } = this.createProblemOperands(baseNumber, randomOperand, operation);
     const symbol = MathFactTable.SYMBOLS[operation] || '+';
     
+    const paddingLength = this.doubleDigitOperands ? 3 : 2;
+    
     return `
       <div class="fact">
-        <div class="top-operand">${String(top).padStart(2, ' ')}</div>
-        <div class="bottom-operand">${symbol} ${String(bottom).padStart(2, ' ')}</div>
+        <div class="top-operand">${String(top).padStart(paddingLength, ' ')}</div>
+        <div class="bottom-operand">${symbol} ${String(bottom).padStart(paddingLength, ' ')}</div>
         <hr class="line">
       </div>
     `;
@@ -218,20 +223,53 @@ class MathFactTable {
     return problems;
   }
 
+  createPageHTML(pageProblems, pageNumber) {
+    const pageDiv = document.createElement("div");
+    pageDiv.className = "worksheet-page";
+    
+    const table = document.createElement("table");
+    const tbody = document.createElement("tbody");
+    
+    let problemIndex = 0;
+    const rowsPerPage = 10;
+    const columnsPerPage = 10;
+    
+    for (let i = 0; i < rowsPerPage; i++) {
+      const row = document.createElement("tr");
+      for (let j = 0; j < columnsPerPage; j++) {
+        const cell = document.createElement("td");
+        if (problemIndex < pageProblems.length) {
+          cell.innerHTML = this.formatVerticalHTML(pageProblems[problemIndex]);
+        } else {
+          // Fill empty cells if needed
+          cell.innerHTML = '<div class="fact empty-cell"></div>';
+        }
+        row.appendChild(cell);
+        problemIndex++;
+      }
+      tbody.appendChild(row);
+    }
+    
+    table.appendChild(tbody);
+    pageDiv.appendChild(table);
+    
+    return pageDiv;
+  }
+
   generateTableHTML() {
     this.finalProblems = this.generateProblems();
     const fragment = document.createDocumentFragment();
     
-    let problemIndex = 0;
-    for (let i = 0; i < this.rows; i++) {
-      const row = document.createElement("tr");
-      for (let j = 0; j < this.columns; j++) {
-        const cell = document.createElement("td");
-        cell.innerHTML = this.formatVerticalHTML(this.finalProblems[problemIndex]);
-        row.appendChild(cell);
-        problemIndex++;
-      }
-      fragment.appendChild(row);
+    const problemsPerPage = 100;
+    const totalPages = Math.ceil(this.finalProblems.length / problemsPerPage);
+    
+    for (let pageNum = 0; pageNum < totalPages; pageNum++) {
+      const startIndex = pageNum * problemsPerPage;
+      const endIndex = Math.min(startIndex + problemsPerPage, this.finalProblems.length);
+      const pageProblems = this.finalProblems.slice(startIndex, endIndex);
+      
+      const pageElement = this.createPageHTML(pageProblems, pageNum + 1);
+      fragment.appendChild(pageElement);
     }
     
     return fragment;
@@ -267,6 +305,7 @@ function generateTable() {
     const pageCount = validateAndGetPageCount();
     const hardProblemsOnly = document.getElementById("hardProblemsOnly")?.checked || false;
     const noRepeatProblems = document.getElementById("noRepeatProblems")?.checked || false;
+    const doubleDigitOperands = document.getElementById("doubleDigitOperands")?.checked || false;
 
     if (baseNumbers.length === 0) {
       alert("Please select at least one base number.");
@@ -287,7 +326,8 @@ function generateTable() {
       columns: 10,
       repetitionWindow: 5,
       hardProblemsOnly,
-      noRepeatProblems
+      noRepeatProblems,
+      doubleDigitOperands
     };
 
     const tableBody = document.getElementById("mathTableBody");

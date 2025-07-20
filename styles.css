@@ -74,6 +74,7 @@ padding-right: 15px;
     line-height: 1.2;
     font-size: 16px;
     white-space: nowrap;
+    min-width: 3ch; /* Accommodate up to 3 characters (2 digits + operator) */
   }
   
   hr.line {
@@ -94,10 +95,46 @@ padding-right: 15px;
     margin-top: 10px;
   }
   
-  /* Hide controls (including the distribution graph) when printing */
+  /* Print-specific styles */
   @media print {
     .controls {
       display: none;
     }
+    
+    .worksheet-page {
+      page-break-after: always;
+      page-break-inside: avoid;
+      height: 100vh;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .worksheet-page:last-child {
+      page-break-after: avoid;
+    }
+    
+    .worksheet-page table {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .empty-cell {
+      visibility: hidden;
+    }
+  }
+  
+  /* Screen display styles for worksheet pages */
+  .worksheet-page {
+    margin-bottom: 40px;
+    border: 1px solid #ddd;
+    padding: 20px;
+    background: white;
+  }
+  
+  .worksheet-page:not(:last-child) {
+    border-bottom: 3px solid #333;
+    margin-bottom: 40px;
   }
   
