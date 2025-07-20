@@ -5,7 +5,39 @@ padding: 20px;
 }
 
 .controls {
-margin-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.control-section {
+  margin-bottom: 15px;
+}
+
+.baseNumberSelection, .operatorSelection {
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.baseNumberSelection label, .operatorSelection label {
+  display: inline-block;
+  margin-right: 15px;
+  margin-bottom: 5px;
+}
+
+.select-all-section {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.select-all-section label {
+  font-weight: bold;
+  margin-right: 0;
+}
+
+.button-section {
+  margin-top: 15px;
 }
 
 table {
@@ -36,11 +68,12 @@ padding-right: 15px;
     text-align: right;
   }
   
-  .operand {
+  .top-operand, .bottom-operand {
     margin: 0;
     padding: 0;
     line-height: 1.2;
     font-size: 16px;
+    white-space: nowrap;
   }
   
   hr.line {

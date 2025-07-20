@@ -8,13 +8,29 @@
 <body>
 
 <div class="controls">
-  <label for="constantValue">Constant operand:</label>
-  <input type="number" id="constantValue" value="4" min="1" max="12">
-  &nbsp;&nbsp;
+  <div class="control-section">
+    <label for="pageCount">Pages (each page = 10 rows):</label>
+    <input type="number" id="pageCount" value="1" min="1">
+  </div>
   
-  <label for="pageCount">Pages (each page = 11 rows):</label>
-  <input type="number" id="pageCount" value="1" min="1">
-  <br>
+  <fieldset class="baseNumberSelection">
+    <legend>Select base numbers to practice:</legend>
+    <div class="select-all-section">
+      <label><input type="checkbox" id="selectAllBaseNumbers"> Select All</label>
+    </div>
+    <label><input type="checkbox" name="baseNumbers" value="1"> 1s</label>
+    <label><input type="checkbox" name="baseNumbers" value="2"> 2s</label>
+    <label><input type="checkbox" name="baseNumbers" value="3"> 3s</label>
+    <label><input type="checkbox" name="baseNumbers" value="4" checked> 4s</label>
+    <label><input type="checkbox" name="baseNumbers" value="5"> 5s</label>
+    <label><input type="checkbox" name="baseNumbers" value="6"> 6s</label>
+    <label><input type="checkbox" name="baseNumbers" value="7"> 7s</label>
+    <label><input type="checkbox" name="baseNumbers" value="8"> 8s</label>
+    <label><input type="checkbox" name="baseNumbers" value="9"> 9s</label>
+    <label><input type="checkbox" name="baseNumbers" value="10"> 10s</label>
+    <label><input type="checkbox" name="baseNumbers" value="11"> 11s</label>
+    <label><input type="checkbox" name="baseNumbers" value="12"> 12s</label>
+  </fieldset>
   
   <fieldset class="operatorSelection">
     <legend>Select operations:</legend>
@@ -24,8 +40,22 @@
     <label><input type="checkbox" name="operators" value="division" checked> Division (÷)</label>
   </fieldset>
   
-  <button id="submitButton">Submit</button>
-  <button id="pdfButton" type="button">Download PDF</button>
+  <div class="control-section">
+    <label>
+      <input type="checkbox" id="hardProblemsOnly"> Hard problems only (excludes 0s, 1s, 2s, 5s, 10s)
+    </label>
+  </div>
+  
+  <div class="control-section">
+    <label>
+      <input type="checkbox" id="noRepeatProblems"> No repeat problems (every problem is unique)
+    </label>
+  </div>
+  
+  <div class="button-section">
+    <button id="submitButton">Generate Worksheet</button>
+    <button id="pdfButton" type="button">Download PDF</button>
+  </div>
 </div>
 
 <table>

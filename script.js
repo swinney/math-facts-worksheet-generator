@@ -1,28 +1,69 @@
 class MathFactTable {
-  constructor(constant, rows, allowedOps, minRandom = 2, maxRandom = 12, columns = 10, repetitionWindow = 5) {
-    this.constant = constant;
-    this.rows = rows;
-    this.allowedOps = allowedOps;
-    this.minRandom = minRandom;
-    this.maxRandom = maxRandom;
-    this.columns = columns;
-    this.repetitionWindow = repetitionWindow;
-    this.totalCells = rows * columns;
+  constructor(options = {}) {
+    this.baseNumbers = options.baseNumbers || [4];
+    this.rows = options.rows || 11;
+    this.allowedOps = options.allowedOps || ['addition'];
+    this.minRandom = options.minRandom || 2;
+    this.maxRandom = options.maxRandom || 12;
+    this.columns = options.columns || 10;
+    this.repetitionWindow = options.repetitionWindow || 5;
+    this.hardProblemsOnly = options.hardProblemsOnly || false;
+    this.noRepeatProblems = options.noRepeatProblems || false;
+    this.totalCells = this.rows * this.columns;
     this.finalProblems = [];
+    
+    this.easyNumbers = new Set([0, 1, 2, 5, 10]);
+  }
+
+  static get OPERATIONS() {
+    return {
+      ADDITION: 'addition',
+      SUBTRACTION: 'subtraction', 
+      MULTIPLICATION: 'multiplication',
+      DIVISION: 'division'
+    };
+  }
+
+  static get SYMBOLS() {
+    return {
+      [this.OPERATIONS.ADDITION]: '+',
+      [this.OPERATIONS.SUBTRACTION]: '−',
+      [this.OPERATIONS.MULTIPLICATION]: '×',
+      [this.OPERATIONS.DIVISION]: '÷'
+    };
+  }
+
+  getFilteredNumbers() {
+    let numbers = [];
+    for (let num = this.minRandom; num <= this.maxRandom; num++) {
+      if (this.hardProblemsOnly && this.easyNumbers.has(num)) {
+        continue;
+      }
+      numbers.push(num);
+    }
+    return numbers;
   }
 
   buildEvenDistributionArray() {
-    const allowedCount = this.maxRandom - this.minRandom + 1;
-    const baseCount = Math.floor(this.totalCells / allowedCount);
-    const remainder = this.totalCells % allowedCount;
+    const allowedNumbers = this.getFilteredNumbers();
+    if (allowedNumbers.length === 0) {
+      throw new Error('No valid numbers available with current settings');
+    }
+    
+    const baseCount = Math.floor(this.totalCells / allowedNumbers.length);
+    const remainder = this.totalCells % allowedNumbers.length;
     let values = [];
 
-    for (let num = this.minRandom; num <= this.maxRandom; num++) {
-      for (let i = 0; i < baseCount; i++) values.push(num);
+    for (const num of allowedNumbers) {
+      for (let i = 0; i < baseCount; i++) {
+        values.push(num);
+      }
     }
-    for (let num = this.minRandom; num < this.minRandom + remainder; num++) {
-      values.push(num);
+    
+    for (let i = 0; i < remainder; i++) {
+      values.push(allowedNumbers[i]);
     }
+    
     return values;
   }
 
@@ -31,144 +72,269 @@ class MathFactTable {
       const j = Math.floor(Math.random() * (i + 1));
       [array[i], array[j]] = [array[j], array[i]];
     }
+    return array;
+  }
+
+  hasConflictInWindow(problems, index, operand, operation) {
+    const start = Math.max(0, index - this.repetitionWindow);
+    for (let j = start; j < index; j++) {
+      if (problems[j].operand === operand && problems[j].operation === operation) {
+        return true;
+      }
+    }
+    return false;
   }
 
   enforceNoRepetitionWithin(problems) {
     for (let i = 0; i < problems.length; i++) {
-      for (let j = Math.max(0, i - this.repetitionWindow); j < i; j++) {
-        if (problems[j].operand === problems[i].operand && problems[j].op === problems[i].op) {
-          for (let k = i + 1; k < problems.length; k++) {
-            let conflict = false;
-            for (let l = Math.max(0, i - this.repetitionWindow); l < i; l++) {
-              if (problems[l].operand === problems[k].operand && problems[l].op === problems[k].op) {
-                conflict = true;
-                break;
-              }
-            }
-            if (!conflict) {
-              [problems[i], problems[k]] = [problems[k], problems[i]];
-              break;
-            }
+      const { operand, operation } = problems[i];
+      
+      if (this.hasConflictInWindow(problems, i, operand, operation)) {
+        for (let k = i + 1; k < problems.length; k++) {
+          const { operand: kOperand, operation: kOperation } = problems[k];
+          if (!this.hasConflictInWindow(problems, i, kOperand, kOperation)) {
+            [problems[i], problems[k]] = [problems[k], problems[i]];
+            break;
           }
         }
       }
     }
   }
 
-  formatVerticalHTML(problem) {
-    let topOperand, bottomOperand, symbol;
-    const { op: operation, operand: r } = problem;
+  createProblemOperands(baseNumber, randomOperand, operation) {
+    const ops = MathFactTable.OPERATIONS;
+    
     switch (operation) {
-      case "addition":
-        symbol = "+";
-        if (Math.random() < 0.5) {
-          topOperand = this.constant;
-          bottomOperand = r;
-        } else {
-          topOperand = r;
-          bottomOperand = this.constant;
-        }
-        break;
-      case "subtraction":
-        symbol = "−";
-        if (this.constant >= r) {
-          topOperand = this.constant;
-          bottomOperand = r;
-        } else {
-          topOperand = r;
-          bottomOperand = this.constant;
-        }
-        break;
-      case "multiplication":
-        symbol = "×";
-        if (Math.random() < 0.5) {
-          topOperand = this.constant;
-          bottomOperand = r;
-        } else {
-          topOperand = r;
-          bottomOperand = this.constant;
-        }
-        break;
-      case "division":
-        symbol = "÷";
-        topOperand = this.constant * r;
-        bottomOperand = this.constant;
-        break;
+      case ops.ADDITION:
+        return Math.random() < 0.5 
+          ? { top: baseNumber, bottom: randomOperand }
+          : { top: randomOperand, bottom: baseNumber };
+          
+      case ops.SUBTRACTION:
+        return baseNumber >= randomOperand
+          ? { top: baseNumber, bottom: randomOperand }
+          : { top: randomOperand, bottom: baseNumber };
+          
+      case ops.MULTIPLICATION:
+        return Math.random() < 0.5
+          ? { top: baseNumber, bottom: randomOperand }
+          : { top: randomOperand, bottom: baseNumber };
+          
+      case ops.DIVISION:
+        return { top: baseNumber * randomOperand, bottom: baseNumber };
+        
       default:
-        symbol = "+";
-        topOperand = this.constant;
-        bottomOperand = r;
-        break;
+        return { top: baseNumber, bottom: randomOperand };
     }
+  }
+
+  formatVerticalHTML(problem) {
+    const { operation, operand: randomOperand, baseNumber } = problem;
+    const { top, bottom } = this.createProblemOperands(baseNumber, randomOperand, operation);
+    const symbol = MathFactTable.SYMBOLS[operation] || '+';
+    
     return `
       <div class="fact">
-        <div class="operand">${String(topOperand).padStart(2, ' ')}</div>
-        <div class="operand">${symbol} ${String(bottomOperand).padStart(2, ' ')}</div>
+        <div class="top-operand">${String(top).padStart(2, ' ')}</div>
+        <div class="bottom-operand">${symbol} ${String(bottom).padStart(2, ' ')}</div>
         <hr class="line">
       </div>
     `;
   }
 
-  generateTableHTML() {
-    let evenNumbers = this.buildEvenDistributionArray();
-    this.shuffleArray(evenNumbers);
+  createProblemKey(baseNumber, operand, operation) {
+    const { top, bottom } = this.createProblemOperands(baseNumber, operand, operation);
+    return `${top}-${operation}-${bottom}`;
+  }
 
-    let problems = [];
-    for (let i = 0; i < evenNumbers.length; i++) {
-      const op = this.allowedOps[Math.floor(Math.random() * this.allowedOps.length)];
-      problems.push({ operand: evenNumbers[i], op });
+  getFilteredBaseNumbers() {
+    if (!this.hardProblemsOnly) {
+      return this.baseNumbers;
+    }
+    
+    return this.baseNumbers.filter(num => !this.easyNumbers.has(num));
+  }
+
+  generateUniqueProblems() {
+    const problems = [];
+    const usedProblems = new Set();
+    const maxAttempts = this.totalCells * 10;
+    let attempts = 0;
+    
+    const filteredBaseNumbers = this.getFilteredBaseNumbers();
+    const filteredRandomNumbers = this.getFilteredNumbers();
+    
+    if (filteredBaseNumbers.length === 0) {
+      throw new Error('No valid base numbers available with hard problems only setting');
+    }
+
+    while (problems.length < this.totalCells && attempts < maxAttempts) {
+      attempts++;
+      
+      const operation = this.allowedOps[Math.floor(Math.random() * this.allowedOps.length)];
+      const baseNumber = filteredBaseNumbers[Math.floor(Math.random() * filteredBaseNumbers.length)];
+      const operand = filteredRandomNumbers[Math.floor(Math.random() * filteredRandomNumbers.length)];
+      
+      const problemKey = this.createProblemKey(baseNumber, operand, operation);
+      
+      if (!usedProblems.has(problemKey)) {
+        usedProblems.add(problemKey);
+        problems.push({ operand, operation, baseNumber });
+      }
+    }
+
+    if (problems.length < this.totalCells) {
+      throw new Error(`Could only generate ${problems.length} unique problems out of ${this.totalCells} requested. Try reducing worksheet size or enabling more options.`);
+    }
+
+    return problems;
+  }
+
+  generateProblems() {
+    if (this.noRepeatProblems) {
+      return this.generateUniqueProblems();
+    }
+
+    const randomOperands = this.shuffleArray(this.buildEvenDistributionArray());
+    const filteredBaseNumbers = this.getFilteredBaseNumbers();
+    const problems = [];
+    
+    if (filteredBaseNumbers.length === 0) {
+      throw new Error('No valid base numbers available with hard problems only setting');
+    }
+
+    for (let i = 0; i < randomOperands.length; i++) {
+      const operation = this.allowedOps[Math.floor(Math.random() * this.allowedOps.length)];
+      const baseNumber = filteredBaseNumbers[Math.floor(Math.random() * filteredBaseNumbers.length)];
+      
+      problems.push({ 
+        operand: randomOperands[i], 
+        operation, 
+        baseNumber 
+      });
     }
 
     this.enforceNoRepetitionWithin(problems);
-    this.finalProblems = problems;
+    return problems;
+  }
 
+  generateTableHTML() {
+    this.finalProblems = this.generateProblems();
     const fragment = document.createDocumentFragment();
-    let idx = 0;
+    
+    let problemIndex = 0;
     for (let i = 0; i < this.rows; i++) {
       const row = document.createElement("tr");
       for (let j = 0; j < this.columns; j++) {
         const cell = document.createElement("td");
-        cell.innerHTML = this.formatVerticalHTML(problems[idx]);
-        idx++;
+        cell.innerHTML = this.formatVerticalHTML(this.finalProblems[problemIndex]);
         row.appendChild(cell);
+        problemIndex++;
       }
       fragment.appendChild(row);
     }
+    
     return fragment;
   }
 }
 
-function generateTable() {
-  const constantInput = document.getElementById("constantValue");
-  const pageCountInput = document.getElementById("pageCount");
-  let constant = parseInt(constantInput.value, 10);
-  let pageCount = parseInt(pageCountInput.value, 10);
+function getSelectedBaseNumbers() {
+  const checkboxes = document.querySelectorAll('input[name="baseNumbers"]:checked');
+  return Array.from(checkboxes).map(cb => parseInt(cb.value, 10));
+}
 
-  if (isNaN(constant) || constant < 1 || constant > 12) {
-    constant = 4;
-    constantInput.value = 4;
-  }
+function getSelectedOperations() {
+  const checkboxes = document.querySelectorAll('input[name="operators"]:checked');
+  return Array.from(checkboxes).map(cb => cb.value);
+}
+
+function validateAndGetPageCount() {
+  const pageCountInput = document.getElementById("pageCount");
+  let pageCount = parseInt(pageCountInput.value, 10);
+  
   if (isNaN(pageCount) || pageCount < 1) {
     pageCount = 1;
     pageCountInput.value = 1;
   }
+  
+  return pageCount;
+}
 
-  const rows = pageCount * 11;
-  const columns = 10;
+function generateTable() {
+  try {
+    const baseNumbers = getSelectedBaseNumbers();
+    const operations = getSelectedOperations();
+    const pageCount = validateAndGetPageCount();
+    const hardProblemsOnly = document.getElementById("hardProblemsOnly")?.checked || false;
+    const noRepeatProblems = document.getElementById("noRepeatProblems")?.checked || false;
 
-  const ops = Array.from(document.querySelectorAll('input[name="operators"]:checked'))
-                 .map(cb => cb.value);
-  if (ops.length === 0) ops.push("addition");
+    if (baseNumbers.length === 0) {
+      alert("Please select at least one base number.");
+      return;
+    }
 
-  const tableBody = document.getElementById("mathTableBody");
-  tableBody.innerHTML = "";
+    if (operations.length === 0) {
+      alert("Please select at least one operation.");
+      return;
+    }
 
-  const table = new MathFactTable(constant, rows, ops, 2, 12, columns, 5);
-  tableBody.appendChild(table.generateTableHTML());
+    const options = {
+      baseNumbers,
+      rows: pageCount * 10,
+      allowedOps: operations,
+      minRandom: 2,
+      maxRandom: 12,
+      columns: 10,
+      repetitionWindow: 5,
+      hardProblemsOnly,
+      noRepeatProblems
+    };
+
+    const tableBody = document.getElementById("mathTableBody");
+    tableBody.innerHTML = "";
+
+    const table = new MathFactTable(options);
+    tableBody.appendChild(table.generateTableHTML());
+  } catch (error) {
+    alert(`Error generating table: ${error.message}`);
+  }
+}
+
+function handleSelectAllBaseNumbers() {
+  const selectAllCheckbox = document.getElementById("selectAllBaseNumbers");
+  const baseNumberCheckboxes = document.querySelectorAll('input[name="baseNumbers"]');
+  
+  baseNumberCheckboxes.forEach(checkbox => {
+    checkbox.checked = selectAllCheckbox.checked;
+  });
+}
+
+function updateSelectAllState() {
+  const selectAllCheckbox = document.getElementById("selectAllBaseNumbers");
+  const baseNumberCheckboxes = document.querySelectorAll('input[name="baseNumbers"]');
+  const checkedBoxes = document.querySelectorAll('input[name="baseNumbers"]:checked');
+  
+  if (checkedBoxes.length === baseNumberCheckboxes.length) {
+    selectAllCheckbox.checked = true;
+    selectAllCheckbox.indeterminate = false;
+  } else if (checkedBoxes.length === 0) {
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.indeterminate = false;
+  } else {
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.indeterminate = true;
+  }
 }
 
 document.getElementById("submitButton").addEventListener("click", generateTable);
-// PDF button simply triggers the print dialog
 document.getElementById("pdfButton").addEventListener("click", () => window.print());
+document.getElementById("selectAllBaseNumbers").addEventListener("change", handleSelectAllBaseNumbers);
 
-window.onload = generateTable;
+document.querySelectorAll('input[name="baseNumbers"]').forEach(checkbox => {
+  checkbox.addEventListener("change", updateSelectAllState);
+});
+
+window.onload = () => {
+  generateTable();
+  updateSelectAllState();
+};
