@@ -298,6 +298,11 @@ function validateAndGetPageCount() {
   return pageCount;
 }
 
+function updateFontSize() {
+  const fontSize = document.getElementById("fontSize").value;
+  document.documentElement.style.setProperty('--problem-font-size', fontSize + 'px');
+}
+
 function generateTable() {
   try {
     const baseNumbers = getSelectedBaseNumbers();
@@ -306,6 +311,9 @@ function generateTable() {
     const hardProblemsOnly = document.getElementById("hardProblemsOnly")?.checked || false;
     const noRepeatProblems = document.getElementById("noRepeatProblems")?.checked || false;
     const doubleDigitOperands = document.getElementById("doubleDigitOperands")?.checked || false;
+
+    // Update font size
+    updateFontSize();
 
     if (baseNumbers.length === 0) {
       alert("Please select at least one base number.");
@@ -369,12 +377,14 @@ function updateSelectAllState() {
 document.getElementById("submitButton").addEventListener("click", generateTable);
 document.getElementById("pdfButton").addEventListener("click", () => window.print());
 document.getElementById("selectAllBaseNumbers").addEventListener("change", handleSelectAllBaseNumbers);
+document.getElementById("fontSize").addEventListener("change", updateFontSize);
 
 document.querySelectorAll('input[name="baseNumbers"]').forEach(checkbox => {
   checkbox.addEventListener("change", updateSelectAllState);
 });
 
 window.onload = () => {
+  updateFontSize();
   generateTable();
   updateSelectAllState();
 };
